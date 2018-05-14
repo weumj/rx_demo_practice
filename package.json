@@ -1,0 +1,12 @@
+{
+  "name": "rxjs_book_demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^1.12.1"
+  }
+}
