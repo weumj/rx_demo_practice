@@ -7,24 +7,29 @@ const hideLoading = () => {
   $loading.style.display = "none";
 };
 
-const { fromEvent } = rxjs;
 const {
-  map,
-  debounceTime,
-  partition,
-  tap,
-  distinctUntilChanged,
-  switchMap,
-  catchError,
-  retry,
-  finalize,
-} = rxjs.operators;
-const { ajax } = rxjs.ajax;
+  Subject,
+  fromEvent,
+  ajax: { ajax },
+  operators: {
+    map,
+    debounceTime,
+    partition,
+    tap,
+    distinctUntilChanged,
+    switchMap,
+    retry,
+    finalize,
+    share,
+  },
+} = rxjs;
 
 const keyup$ = fromEvent(document.getElementById("search"), "keyup").pipe(
   debounceTime(300), // 300ms 뒤에 데이터를 전달한다.
   map(event => event.target.value),
   distinctUntilChanged(), // 특수키가 입력된 경우에는 나오지 않기 위해 중복 데이터 처리
+  tap(v => console.log("from keyup$", v)),
+  share(),
 );
 
 let [user$, reset$] = keyup$.pipe(partition(query => query.trim().length > 0));
@@ -66,3 +71,4 @@ user$.subscribe({
     alert(e.message);
   },
 });
+keyup$.connect();
