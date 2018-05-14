@@ -13,16 +13,22 @@ const EVENTS = {
 const {
   fromEvent,
   merge,
+  of,
+  defer,
+  animationFrameScheduler,
+  interval,
   operators: {
     map,
     startWith,
     switchMap,
     takeUntil,
-    tap,
+    reduce,
     share,
     first,
-    withLatestFrom,
     scan,
+    withLatestFrom,
+    takeWhile,
+    concat,
   },
 } = rxjs;
 
@@ -32,6 +38,19 @@ const toPos = obs$ =>
 const translateX = posX => {
   $container.style.transform = `translate3d(${posX}px, 0, 0)`;
 };
+
+const animation = (from, to, duration) =>
+  defer(() => {
+    const scheduler = animationFrameScheduler;
+    const start = scheduler.now();
+
+    return interval(0, scheduler).pipe(
+      map(() => (scheduler.now() - start) / duration),
+      takeWhile(rate => rate <= 1),
+      concat(of(1)),
+      map(rate => from + (to - from) * rate),
+    );
+  });
 
 const start$ = fromEvent($view, EVENTS.start).pipe(toPos);
 const move$ = fromEvent($view, EVENTS.move).pipe(toPos);
@@ -44,6 +63,8 @@ const size$ = fromEvent(window, "resize").pipe(
 
 // size$.subscribe(width => console.log("view의 넓이", width));
 
+// drag$.subscribe(distance => console.log("start$와 move$의 차이값", distance));
+
 const drag$ = start$.pipe(
   switchMap(start =>
     move$.pipe(
@@ -52,11 +73,9 @@ const drag$ = start$.pipe(
     ),
   ),
   // tap(v => console.log("drag$", v)),
-  map(distance => ({ distance })),
   share(),
+  map(distance => ({ distance })),
 );
-
-// drag$.subscribe(distance => console.log("start$와 move$의 차이값", distance));
 
 const drop$ = drag$.pipe(
   // tap(v => console.log("drop$", v))
@@ -99,9 +118,13 @@ const carousel$ = merge(drag$, drop$).pipe(
     },
     { from: 0, to: 0, index: 0, size: 0 },
   ),
+  switchMap(
+    ({ from, to }) =>
+      from === to ? of(to) : animation(from, to, DEFAULT_DURATION),
+  ),
 );
 
 carousel$.subscribe(v => {
   console.log("캐로셀 데이터", v);
-  translateX(v.to);
+  translateX(v);
 });
