@@ -3,6 +3,7 @@ const {
   of,
   combineLatest,
   from,
+  merge,
   operators: { map, switchMap, pluck, mergeMap, scan },
   ajax: { ajax },
 } = rxjs;
@@ -105,11 +106,11 @@ export default class Map {
     );
   }
 
-  constructor($map) {
+  constructor($map, search$) {
     this.naverMap = createNaverMap($map);
     this.infowindow = createNaverInfoWindow();
 
-    const station$ = this.createDragend$().pipe(
+    const station$ = merge(search$, this.createDragend$()).pipe(
       this.mapStation,
       this.manageMarker.bind(this),
       this.mapMarkerClick,
@@ -209,7 +210,7 @@ export default class Map {
       .map(
         bus =>
           `<dd>
-            <a href="#">
+            <a href="#${bus.routeId}_${bus.routeName}">
                 <strong>${bus.routeName}</strong>
                 <span>${bus.regionName}</span>
                 <span
