@@ -16,6 +16,8 @@ const {
   ajax: { ajax },
 } = rxjs;
 
+import { handleAjax } from "./common.js";
+
 export default class AutoComplete {
   constructor($autocomplete) {
     this.$input = $autocomplete.querySelector("input");
@@ -29,7 +31,7 @@ export default class AutoComplete {
     search$ = search$.pipe(
       tap(() => this.showLoading()),
       switchMap(query => ajax.getJSON(`/bus/${query}`)),
-      pluck("busRouteList"),
+      handleAjax("busRouteList"),
       retry(2),
       tap(() => this.hideLoading()),
       finalize(() => {
