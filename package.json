@@ -3,10 +3,20 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "start": "nodemon --inspect ./demo/js/4.api-server.js"
+  },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "isomorphic-fetch": "^2.2.1",
+    "express": "^4.16.3",
+    "xml2json": "^0.11.2"
+  },
   "devDependencies": {
-    "prettier": "^1.12.1"
+    "prettier": "^1.12.1",
+    "nodemon": "^1.17.4",
+    "rxjs": "^6.1.0",
+    "rxjs-compat": "^6.1.0"
   }
 }
