@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --inspect ./demo/js/4.api-server.js"
+    "start": "nodemon --inspect ./demo/4.demo/api-server.js"
   },
   "author": "",
   "license": "ISC",

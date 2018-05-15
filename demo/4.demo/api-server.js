@@ -16,7 +16,7 @@ const { switchMap, map, take } = require("rxjs/operators");
 const SERVICE_KEY =
   "MpmiwfwaQQGY9aZEbmf2UwD4K0mOx7X5H4twJWlLYCQ7h8GH0Rypsi41pMDm67H4f0bjtiSk1NUVsWS5PyOkpw%3D%3D";
 
-app.use(express.static("./"));
+app.use(express.static("./demo/4.demo"));
 
 function createRemote$(url) {
   return from(fetch(url)).pipe(
@@ -33,7 +33,7 @@ function createRemote$(url) {
         });
       }
     }),
-    take(1),
+    take(1)
   );
 }
 
@@ -75,7 +75,7 @@ Object.keys(routes).forEach(path => {
       params.push(`&${param}=${req.params[param]}`);
     }
     createRemote$(
-      routes[path].url + `?serviceKey=${SERVICE_KEY}${params.join("")}`,
+      routes[path].url + `?serviceKey=${SERVICE_KEY}${params.join("")}`
     ).subscribe(data => res.json(data));
   });
 });
