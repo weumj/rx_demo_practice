@@ -1,3 +1,11 @@
+const {
+  fromEvent,
+  of,
+  from,
+  operators: { map, switchMap, pluck, mergeMap, scan },
+  ajax: { ajax },
+} = rxjs;
+
 // 버스 타입의 클래스를 결정하는 함수
 function getBuesType(name) {
   if (/^광역/.test(name)) {
@@ -8,6 +16,7 @@ function getBuesType(name) {
     return "";
   }
 }
+
 // 네이버 지도 생성
 function createNaverMap($map) {
   return new naver.maps.Map($map, {
@@ -15,10 +24,12 @@ function createNaverMap($map) {
     minZoom: 6,
   });
 }
+
 // 네이버 지도 위에 표시할 정보윈도우 생성
 function createNaverInfoWindow() {
   return new naver.maps.InfoWindow();
 }
+
 export default class Map {
   // 네이버 지도API를 이용하여 지도의 중앙을 주어진 좌표로 이동하고 지도의 zoom을 11로 지정한다. 또한 infoWindow를 닫는다.
   centerMapAndCloseWindow(coord) {
@@ -28,6 +39,7 @@ export default class Map {
     this.naverMap.setZoom(11);
     this.infowindow.close();
   }
+
   // 지도의 특정 위치에 마커를 생성한다.
   createMarker(name, x, y) {
     return new naver.maps.Marker({
@@ -36,10 +48,12 @@ export default class Map {
       position: new naver.maps.LatLng(y, x),
     });
   }
+
   // 지도에 있는 마커를 제거한다.
   deleteMarker(marker) {
     marker && marker.setMap(null);
   }
+
   // 정류소 정보를 바탕으로 네이버 지도API를 이용하여 지도에 경로를 그린다.
   drawPath(stations) {
     // 경로를 지도에 표시한다.
@@ -55,10 +69,12 @@ export default class Map {
     });
     // 패스 그리기
     const path = this.polyline.getPath();
+
     stations.forEach(station => {
       path.push(new naver.maps.LatLng(station.y, station.x));
     });
   }
+
   // 네이버 지도API를 이용하여 지도에 경로가 있다면 지운다.
   deletePath() {
     // 기존 패스 삭제
@@ -74,6 +90,7 @@ export default class Map {
     this.infowindow.setContent(content);
     this.infowindow.open(this.naverMap, marker);
   }
+
   // 지도 위에 표시되는 정보창(infowindow)을 닫는다.
   closeInfoWindow() {
     this.infowindow.close();
@@ -85,8 +102,65 @@ export default class Map {
       position.equals(this.infowindow.getPosition()) && this.infowindow.getMap()
     );
   }
+
   constructor($map) {
     this.naverMap = createNaverMap($map);
     this.infowindow = createNaverInfoWindow();
+
+    const station$ = this.createDragend$().pipe(
+      this.mapStation,
+      this.manageMarker.bind(this),
+      this.mapMarkerClick
+    );
+
+    station$.subscribe(markInfo => {
+      console.log("클릭한 마커의 정보 ", markInfo);
+    });
+  }
+
+  createDragend$() {
+    return fromEvent(this.naverMap, "dragend") // 지도 영역을 dragend 했을 때
+      .pipe(
+        map(({ coord }) => ({
+          latitude: coord.y,
+          longitude: coord.x,
+        }))
+      );
+  }
+
+  mapStation(coord$) {
+    return coord$.pipe(
+      switchMap(coord =>
+        ajax.getJSON(`/station/around/${coord.longitude}/${coord.latitude}`)
+      ),
+      pluck("busStationAroundList")
+    );
+  }
+
+  mapMarkerClick(marker$) {
+    return marker$.pipe(
+      mergeMap(marker => fromEvent(marker, "click")),
+      map(({ overlay }) => ({
+        marker: overlay,
+        position: overlay.getPosition(),
+      }))
+    );
+  }
+
+  manageMarker(station$) {
+    return station$.pipe(
+      map(stations =>
+        stations.map(station =>
+          this.createMarker(station.stationName, station.x, station.y)
+        )
+      ),
+      scan((prev, markers) => {
+        // 이전 markers 삭제
+        prev.forEach(this.deleteMarker);
+        prev = markers;
+        return prev;
+      }, []),
+      mergeMap(from)
+    );
   }
 }
